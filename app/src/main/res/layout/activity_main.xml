@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="vertical"
+    android:background="#ffa">
+
+    <TextView
+        android:id="@+id/listentext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Listenning to server address"
+        android:textSize="16dp"
+        android:textStyle="bold"
+        android:paddingLeft="20dp"
+        android:textColor="#000"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="5dp"/>
+    <EditText
+        android:id="@+id/server_ip"
+        android:layout_width="250dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:text="192.168.43.140"
+        android:textColor="#fff"
+        android:background="#000"
+        android:textSize="15dp"
+        android:paddingHorizontal="5dp"/>
+    <Button
+        android:id="@+id/start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="START LISTENNING"
+        android:padding="8dp"
+        android:layout_marginVertical="10dp"
+        android:background="#0c2"
+        android:textColor="#fff"
+        android:layout_gravity="center_horizontal"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Messages received"
+        android:textSize="16dp"
+        android:textStyle="bold"
+        android:paddingLeft="20dp"
+        android:textColor="#000"
+        android:layout_marginBottom="5dp"/>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="10dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/recycler"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            </android.support.v7.widget.RecyclerView>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
