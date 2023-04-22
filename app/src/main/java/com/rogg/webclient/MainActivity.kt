@@ -3,40 +3,58 @@ package com.rogg.webclient
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ClipDescription
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.Color
 import android.os.Build
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
-import android.support.v4.app.NotificationCompat
-import android.support.v4.app.NotificationManagerCompat
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.util.Patterns
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
+
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.appcompat.app.AppCompatActivity
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
+import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.net.InetAddress
+import java.net.NetworkInterface
+import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity() {
+    var address:Int by Delegates.observable(0) { property, oldValue, newValue ->
+        if (newValue < 255) {
+            var root = "http://192.168.43." + newValue
+            Log.i("ClientHttp_scan","address : " +root)
+            listen_scan(root, device_description)
+        } else {
+            searching.visibility=View.GONE
+            Toast.makeText(this, "Ekhosport server not found", Toast.LENGTH_LONG)
+        }
+    }
     var adapter:ViewholderMessage?=null
     var start : Button?=null
     var recycler:RecyclerView?=null
+    lateinit var searching:RelativeLayout
+    var device_description=""
     var temp:Long=0
     var stop=false
+    var id_dev="1001012"
     companion object {
         var messages: ArrayList<Message> = ArrayList()
         var lastmessage="Welcome to our discussion server"
@@ -46,9 +64,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         messages.clear()
         start=findViewById(R.id.start)
+        searching=findViewById(R.id.searching)
         recycler=findViewById(R.id.recycler)
         adapter= ViewholderMessage(messages)
         recycler!!.adapter=adapter
+
         var ip=findViewById<EditText>(R.id.server_ip)
         var text=findViewById<TextView>(R.id.listentext)
         var thread_listen=Thread(Runnable {
@@ -62,6 +82,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+        var ip_dev=getIPAddress(true).replace(".","_")
+        var name_dev=Build.BRAND+" "+Build.MODEL
+        var name_dev2=Build.MODEL
+        device_description=name_dev+":"+id_dev+":"+ip_dev+":"+name_dev2
+        var root = "http://192.168.43.105"
+        listen_scan(root, device_description)
+
         recycler!!.layoutManager=LinearLayoutManager(this)
         start!!.setOnClickListener(View.OnClickListener {
             if (ip.text.isEmpty() || !Patterns.IP_ADDRESS.matcher(ip.text.toString()).matches()){
@@ -105,7 +132,26 @@ class MainActivity : AppCompatActivity() {
         var to:String=""
         var time:Long=0
     }
+    fun listen_scan(root:String,description: String){
+        FuelManager.instance.basePath = root+":1337/scan"
+        "/"+description.httpGet().responseString { request, response, result ->
+            when (result) {
+                is Result.Failure -> {
+                    address += 1
+                }
+                is Result.Success -> {
+                    val data = result.get()
+                    if (data.equals("Scanned")){
+                        FuelManager.instance.reset()
+                        findViewById<EditText>(R.id.server_ip).setText(root.split("//")[1])
+                        findViewById<EditText>(R.id.server_ip).keyListener=null
+                        searching.visibility=View.GONE
 
+                    }
+                }
+            }
+        }
+    }
     fun listen(){
         "/".httpGet().responseString { request, response, result ->
             when (result) {
@@ -117,7 +163,7 @@ class MainActivity : AppCompatActivity() {
                     val data = result.get()
                     if (!data.equals(lastmessage)){
                         val mmes=decode_request(result.get())
-                        if (mmes.to.contains("ID0001") || mmes.to.contains("*")){
+                        if (mmes.to.contains(id_dev) || mmes.to.contains("*")){
                             messages.add(mmes)
                             createNotification(mmes)
                             adapter!!.notifyDataSetChanged()
@@ -129,6 +175,34 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    fun getIPAddress( useIPv4: Boolean):String {
+        try {
+            var interfaces:List<NetworkInterface>  = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for ( intf: NetworkInterface in interfaces) {
+                val addrs :List<InetAddress>  = Collections.list(intf.getInetAddresses());
+                for (addr : InetAddress in addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        val sAddr = addr.getHostAddress()
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        val isIPv4 = sAddr.indexOf(':')<0
+
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr
+                        } else {
+                            if (!isIPv4) {
+                                val delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return if (delim<0)  sAddr.toUpperCase() else sAddr.substring(0, delim).toUpperCase()
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (ignored: Exception) { } // for now eat exceptions
+        return ""
+    }
+
 
     private fun createNotification(message: Message) {
         // Create the NotificationChannel, but only on API 26+ because

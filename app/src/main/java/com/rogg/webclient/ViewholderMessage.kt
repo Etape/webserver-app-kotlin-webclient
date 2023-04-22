@@ -1,7 +1,6 @@
 package com.rogg.webclient
 
 import android.graphics.Color
-import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.recyclerview.widget.RecyclerView
 
 
 class ViewholderMessage(private val dataSet: ArrayList<MainActivity.Message>)  :
